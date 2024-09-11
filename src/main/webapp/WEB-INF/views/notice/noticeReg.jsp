@@ -1,5 +1,4 @@
-<%@ page language="java" contentType="text/html; charset=UTF-8"
-		 pageEncoding="UTF-8"%>
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,6 +7,8 @@
 	<link rel="stylesheet" href="/css/table.css"/>
 	<script type="text/javascript" src="/js/jquery-3.6.0.min.js"></script>
 	<script type="text/javascript">
+		let saveFilePath = "${saveFilePath}";
+		let saveFileName = "${saveFileName}";
 
 		// HTML로딩이 완료되고, 실행됨
 		$(document).ready(function () {
@@ -36,8 +37,8 @@
 
 		// 공지사항 저장하기
 		function doSubmit() {
-
-			let f = document.getElementById("f"); // form 태그
+			let f = document.getElementById("f");
+			let formData = new FormData(f);
 
 			if (f.title.value === "") {
 				alert("제목을 입력하시기 바랍니다.");
@@ -45,20 +46,8 @@
 				return;
 			}
 			if (calBytes(f.title.value) > 200) {
-				alert("최대 200Bytes까지 입력 가능합니다.");
+				alert("최대 200바이트까지 입력 가능합니다.");
 				f.title.focus();
-				return;
-			}
-			let noticeCheck = false; //체크 여부 확인 변수
-			for (let i = 0; i < f.noticeYn.length; i++) {
-				if (f.noticeYn[i].checked) {
-					noticeCheck = true;
-					break;
-				}
-			}
-			if (noticeCheck === false) {
-				alert("공지글 여부를 선택하시기 바랍니다.");
-				f.noticeYn[0].focus();
 				return;
 			}
 			if (f.contents.value === "") {
@@ -67,29 +56,129 @@
 				return;
 			}
 			if (calBytes(f.contents.value) > 4000) {
-				alert("최대 4000Bytes까지 입력 가능합니다.");
+				alert("최대 4000바이트까지 입력 가능합니다.");
 				f.contents.focus();
 				return;
 			}
 
-			// Ajax 호출해서 글 등록하기
+			let file = $("#uploadFile")[0].files[0];
+
+			// 파일이 선택되었는지 확인 후 FormData에 추가
+			if (file) {
+				let ext = file.name.split('.').pop(); // 파일 확장자
+				formData.append("ext", ext);
+				formData.append("fileName", saveFileName);
+				formData.append("filePath", saveFilePath);
+				formData.append("uploadFile", file);
+			}
+
 			$.ajax({
-						url: "/notice/noticeInsert",
-						type: "post", // 전송방식은 Post
-						// contentType: "application/json",
-						dataType: "JSON", // 전송 결과는 JSON으로 받기
-						data: $("#f").serialize(), // form 태그 내 input 등 객체를 자동으로 전송할 형태로 변경하기
-						success: function (json) { // /notice/noticeInsert 호출이 성공했다면..
-							alert(json.msg); // 메시지 띄우기
-							location.href = "/notice/noticeList"; // 공지사항 리스트 이동
-						}
-					}
-			)
+				url: "/notice/noticeInsert",
+				type: "post",
+				dataType: "JSON",
+				data: formData,
+				contentType: false,
+				processData: false,
+				success: function (json) {
+					alert(json.msg);
+					location.href = "/notice/noticeList";
+				},
+				error: function (error) {
+					console.error("양식 제출 중 오류 발생", error);
+					alert("양식 제출 중 오류가 발생했습니다. 자세한 내용은 콘솔을 확인하세요.");
+				}
+			});
 		}
 	</script>
+
+	<style>
+		body {
+			font-family: Arial, sans-serif;
+			background-color: #f5f5f5;
+			margin: 0;
+			padding: 0;
+		}
+
+		h2 {
+			color: #333;
+			text-align: center;
+			padding: 20px;
+		}
+
+		hr {
+			border: 1px solid #ddd;
+			margin: 20px 0;
+		}
+
+		form {
+			max-width: 800px;
+			margin: 0 auto;
+			background-color: #fff;
+			padding: 20px;
+			border-radius: 8px;
+			box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+		}
+
+		.divTable {
+			display: table;
+			width: 100%;
+		}
+
+		.divTableBody {
+			display: table-row-group;
+		}
+
+		.divTableRow {
+			display: table-row;
+		}
+
+		.divTableCell {
+			display: table-cell;
+			padding: 10px;
+		}
+
+		input[type="text"],
+		textarea,
+		input[type="file"] {
+			width: 95%;
+			padding: 8px;
+			margin: 8px 0;
+			display: inline-block;
+			border: 1px solid #ccc;
+			box-sizing: border-box;
+			border-radius: 4px;
+		}
+
+		input[type="button"] {
+			background-color: #4caf50;
+			color: white;
+			padding: 10px 20px;
+			border: none;
+			border-radius: 4px;
+			cursor: pointer;
+		}
+
+		input[type="button"]:hover {
+			background-color: #45a049;
+		}
+
+		button[type="reset"] {
+			background-color: #f44336;
+			color: white;
+			padding: 10px 20px;
+			border: none;
+			border-radius: 4px;
+			cursor: pointer;
+			margin-left: 10px;
+		}
+
+		button[type="reset"]:hover {
+			background-color: #d32f2f;
+		}
+	</style>
 </head>
 <body>
-<h2>공지사항 등록하기</h2>
+<h2>커뮤니티 글 등록하기</h2>
 <hr/>
 <br/>
 <form name="f" id="f">
@@ -99,34 +188,26 @@
 				<div class="divTableCell">제목
 				</div>
 				<div class="divTableCell">
-					<input type="text" name="title" maxlength="100" style="width: 95%"/>
-				</div>
-			</div>
-			<div class="divTableRow">
-				<div class="divTableCell">공지글 여부
-				</div>
-				<div class="divTableCell">
-					예<input type="radio" name="noticeYn" value="Y"/>
-					아니오<input type="radio" name="noticeYn" value="N"/>
-				</div>
-			</div>
-			<div class="divTableRow">
-				<div class="divTableCell">조회수
-				</div>
-				<div class="divTableCell">
+					<input type="text" name="title" maxlength="100"/>
 				</div>
 			</div>
 			<div class="divTableRow">
 				<div class="divTableCell">내용
 				</div>
 				<div class="divTableCell">
-					<textarea name="contents" style="width: 95%; height: 400px"></textarea>
+					<textarea name="contents" style="height: 200px"></textarea>
+				</div>
+			</div>
+			<div class="divTableRow">
+				<div class="divTableCell">이미지 업로드</div>
+				<div class="divTableCell">
+					<input type="file" name="uploadFile" id="uploadFile" accept="image/*"/>
 				</div>
 			</div>
 		</div>
 	</div>
 	<div>
-		<button id="btnSend" type="button">등록</button>
+		<input id="btnSend" type="button" value="등록"/>
 		<button type="reset">다시 작성</button>
 	</div>
 </form>

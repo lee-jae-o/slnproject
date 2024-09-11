@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="project.sln.persistance.mapper.ITreeMapper">
+
+    <resultMap id="treeResultMap" type="project.sln.dto.TreeDTO">
+        <id property="userId" column="USER_ID"/>
+        <result property="score" column="SCORE"/>
+        <result property="testDate" column="TEST_DATE"/>
+        <!-- 다른 필드에 대한 매핑을 추가할 수 있습니다. -->
+    </resultMap>
+
+    <insert id="insertTree" parameterType="project.sln.dto.TreeDTO">
+        INSERT INTO TREE (USER_ID, SCORE, TEST_DATE)
+        VALUES (#{userId}, #{score}, #{testDate})
+    </insert>
+
+    <select id="getTreeByUserId" resultMap="treeResultMap">
+        SELECT * FROM TREE WHERE USER_ID = #{userId}
+    </select>
+
+    <update id="updateTree" parameterType="project.sln.dto.TreeDTO">
+        UPDATE TREE
+        SET SCORE = #{score}, TEST_DATE = #{testDate}
+        WHERE USER_ID = #{userId}
+    </update>
+
+    <!-- 다른 필요한 쿼리들을 추가할 수 있습니다. -->
+
+</mapper>

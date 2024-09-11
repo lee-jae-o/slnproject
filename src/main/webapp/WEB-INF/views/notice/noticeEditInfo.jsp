@@ -1,7 +1,6 @@
-<%@ page language="java" contentType="text/html; charset=UTF-8"
-         pageEncoding="UTF-8" %>
-<%@ page import="kopo.poly.util.CmmUtil" %>
-<%@ page import="kopo.poly.dto.NoticeDTO" %>
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+<%@ page import="project.sln.util.CmmUtil" %>
+<%@ page import="project.sln.dto.NoticeDTO" %>
 <%
     // NoticeController 함수에서 model 객체에 저장된 값 불러오기
     NoticeDTO rDTO = (NoticeDTO) request.getAttribute("rDTO");
@@ -42,7 +41,6 @@
 
         // 공지사항 저장하기
         function doSubmit() {
-
             let f = document.getElementById("f"); // form 태그
 
             if (f.title.value === "") {
@@ -53,18 +51,6 @@
             if (calBytes(f.title.value) > 200) {
                 alert("최대 200Bytes까지 입력 가능합니다.");
                 f.title.focus();
-                return;
-            }
-            let noticeCheck = false; //체크 여부 확인 변수
-            for (let i = 0; i < f.noticeYn.length; i++) {
-                if (f.noticeYn[i].checked) {
-                    noticeCheck = true;
-                    break;
-                }
-            }
-            if (noticeCheck === false) {
-                alert("공지글 여부를 선택하시기 바랍니다.");
-                f.noticeYn[0].focus();
                 return;
             }
             if (f.contents.value === "") {
@@ -78,26 +64,123 @@
                 return;
             }
 
+            // 파일 추가
+            let formData = new FormData(f); // 수정: form 객체를 직접 전달
+
+            // 파일 추가
+            formData.append("uploadFile", $("#uploadFile")[0].files[0]);
+
             // Ajax 호출해서 글 등록하기
             $.ajax({
-                    url: "/notice/noticeUpdate",
-                    type: "post", // 전송방식은 Post
-                    dataType: "JSON", // 전송 결과는 JSON으로 받기
-                    data: $("#f").serialize(), // form 태그 내 input 등 객체를 자동으로 전송할 형태로 변경하기
-                    success: function (json) { // /notice/noticeUpdate 호출이 성공했다면..
-                        alert(json.msg); // 메시지 띄우기
-                        location.href = "/notice/noticeList"; // 공지사항 리스트 이동
-                    }
+                url: "/notice/noticeUpdate",
+                type: "post",
+                dataType: "JSON",
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function (json) {
+                    alert(json.msg);
+                    location.href = "/notice/noticeList";
+                },
+                error: function (xhr, status, error) {
+                    console.error(xhr.responseText);
+                    alert("오류가 발생했습니다. 콘솔을 확인하세요.");
                 }
-            )
+            });
         }
     </script>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 0;
+        }
+
+        h2 {
+            color: #333;
+            text-align: center;
+            padding: 20px;
+        }
+
+        hr {
+            border: 1px solid #ddd;
+            margin: 20px 0;
+        }
+
+        form {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .divTable {
+            display: table;
+            width: 100%;
+        }
+
+        .divTableBody {
+            display: table-row-group;
+        }
+
+        .divTableRow {
+            display: table-row;
+        }
+
+        .divTableCell {
+            display: table-cell;
+            padding: 10px;
+        }
+
+        input[type="text"],
+        textarea,
+        input[type="file"] {
+            width: 95%;
+            padding: 8px;
+            margin: 8px 0;
+            display: inline-block;
+            border: 1px solid #ccc;
+            box-sizing: border-box;
+            border-radius: 4px;
+        }
+
+        input[type="button"] {
+            background-color: #4caf50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        input[type="button"]:hover {
+            background-color: #45a049;
+        }
+
+        button[type="reset"] {
+            background-color: #f44336;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+
+        button[type="reset"]:hover {
+            background-color: #d32f2f;
+        }
+    </style>
 </head>
 <body>
-<h2>공지사항 수정하기</h2>
+<h2>글 수정하기</h2>
 <hr/>
 <br/>
-<form name="f" id="f">
+<form name="f" id="f" enctype="multipart/form-data">
     <input type="hidden" name="nSeq" value="<%=CmmUtil.nvl(request.getParameter("nSeq")) %>"/>
     <div class="divTable minimalistBlack">
         <div class="divTableBody">
@@ -105,38 +188,26 @@
                 <div class="divTableCell">제목
                 </div>
                 <div class="divTableCell">
-                    <input type="text" name="title" maxlength="100"
-                           style="width: 95%"/><%=CmmUtil.nvl(rDTO.getTitle()) %>
-                </div>
-            </div>
-            <div class="divTableRow">
-                <div class="divTableCell">공지글 여부
-                </div>
-                <div class="divTableCell">
-                    예<input type="radio" name="noticeYn"
-                            value="Y" <%=CmmUtil.checked(CmmUtil.nvl(rDTO.getNoticeYn()), "Y") %> />
-                    아니오<input type="radio" name="noticeYn"
-                              value="N" <%=CmmUtil.checked(CmmUtil.nvl(rDTO.getNoticeYn()), "N") %>/>
-                </div>
-            </div>
-            <div class="divTableRow">
-                <div class="divTableCell">조회수
-                </div>
-                <div class="divTableCell"><%=CmmUtil.nvl(rDTO.getReadCnt()) %>
+                    <input type="text" name="title" maxlength="100" style="width: 95%" value="<%=CmmUtil.nvl(rDTO.getTitle()) %>"/>
                 </div>
             </div>
             <div class="divTableRow">
                 <div class="divTableCell">내용
                 </div>
                 <div class="divTableCell">
-                    <textarea name="contents"
-                              style="width: 95%; height: 400px"><%=CmmUtil.nvl(rDTO.getContents()) %></textarea>
+                    <textarea name="contents" style="width: 95%; height: 400px"><%=CmmUtil.nvl(rDTO.getContents()) %></textarea>
+                </div>
+            </div>
+            <div class="divTableRow">
+                <div class="divTableCell">이미지 업로드</div>
+                <div class="divTableCell">
+                    <input type="file" name="uploadFile" id="uploadFile" accept="image/*"/>
                 </div>
             </div>
         </div>
     </div>
     <div>
-        <button id="btnSend" type="button">수정</button>
+        <input id="btnSend" type="button" value="수정"/>
         <button type="reset">다시 작성</button>
     </div>
 </form>
